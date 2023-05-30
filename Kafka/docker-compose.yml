@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+    image: wurstmeister/kafka
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_LISTENERS=EXTERNAL_SAME_HOST://:29092,INTERNAL://:9092
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL_SAME_HOST://localhost:29092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL_SAME_HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL     
+      - KAFKA_CREATE_TOPICS= "my_topic:1:1 --replication-factor 1 --partitions 1 --partitions 1"
+     
+    
+  mysql:
+    image: mysql:latest
+    container_name: my-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - "3306:3306"
+    
+  teacher:
+    build: /teacher
+    depends_on:
+      - kafka
+      - mysql
+    ports:
+      - "5000:5000"
+    
+    environment:
+      MYSQL_HOST: my-mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
+      KAFKA_HOST: kafka
+      KAFKA_TOPIC: my_topic
+  student:
+    build: /student
+    depends_on:
+      - kafka
+      - mysql
+    
+    ports:
+      - "5001:5001"
+    environment:
+      MYSQL_HOST: my-mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 1234
+      KAFKA_HOST: kafka
+      KAFKA_TOPIC: my_topic

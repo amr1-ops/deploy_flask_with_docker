@@ -1,0 +1,7 @@
+Flask>=2.2.2
+PyYAML==6.0
+statsmodels==0.12.2
+urllib3==1.26.7
+Flask-Cors==3.0.10
+mysql-connector-python==8.0.26
+confluent-kafka==1.7.0
